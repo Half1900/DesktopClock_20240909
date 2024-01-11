@@ -1,28 +1,19 @@
 # DesktopClock 🕒
 
-[![Release](https://img.shields.io/github/release/danielchalmers/DesktopClock?include_prereleases)](https://github.com/danielchalmers/DesktopClock/releases)
-[![License](https://img.shields.io/github/license/danielchalmers/DesktopClock)](LICENSE)
+1、可以更改时钟背景颜色
 
-![Animation](https://github.com/danielchalmers/DesktopClock/assets/7112040/6038fa47-3a29-4b74-8f4f-fffeb8af8d0a)
+![image](https://github.com/Half1900/DesktopClock/assets/149751999/e8651377-7109-4afa-b280-bad05c30351e)
+![image](https://github.com/Half1900/DesktopClock/assets/149751999/17879ccc-a8d1-4e09-b71a-52e5b3075130)
 
-![Context menu](https://user-images.githubusercontent.com/7112040/201500304-fadedaeb-fc50-47b7-9de0-80c45346c35d.png)
+2、时钟设置部分
 
-A configurable digital clock app for your Windows desktop that remains visible on screen so it's there whenever you need it.
+![image](https://github.com/Half1900/DesktopClock/assets/149751999/30bb3e12-4a1c-4d6f-8278-4f770be6c811)
+![image](https://github.com/Half1900/DesktopClock/assets/149751999/acb91846-f1f1-4201-bd2d-3a319c61553e)
 
-With a right-click, access essential options like size, time zone, format, and theme, or make new clocks from the same menu.
-Double left-click will copy the time to the clipboard, and holding Ctrl while scrolling will resize the clock.
-For power users, "advanced settings" provides even more configuration choices in a familiar JSON format.
-There's also a countdown mode that allows you to set a countdown to any date of your choice.
+3、可以调整时钟大小
+![image](https://github.com/Half1900/DesktopClock/assets/149751999/6b61b85b-467d-42ae-b12c-8296220c6577)
 
-Got an idea or found a bug? Submit an [issue](https://github.com/danielchalmers/DesktopClock/issues)!
+4、可以设置日期格式
 
-## Credits
+![image](https://github.com/Half1900/DesktopClock/assets/149751999/924feef8-f15c-4c54-9de6-a3009612cfc9)
 
-- [CommunityToolkit](https://github.com/CommunityToolkit/dotnet)
-- [Costura.Fody](https://github.com/Fody/Costura)
-- [H.NotifyIcon.Wpf](https://github.com/HavenDV/H.NotifyIcon)
-- [Humanizer](https://github.com/Humanizr/Humanizer)
-- [Newtonsoft.Json](https://www.newtonsoft.com/json)
-- [PropertyChanged.Fody](https://github.com/Fody/PropertyChanged)
-- [WpfWindowPlacement](https://github.com/danielchalmers/WpfWindowPlacement)
-- [Clock icon](https://www.flaticon.com/free-icon/three-o-clock-clock_13435)

@@ -1,0 +1,30 @@
+name: Deploy
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  deploy:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-dotnet@v2
+
+      - name: Build
+        run: dotnet publish .\DesktopClock\DesktopClock.csproj -o "publish" -c Release -r win-x64
+
+      - name: Create installer
+        run: |
+          dotnet tool install --global wix --version 4.0.2
+          wix build Product.wxs -o "publish/Install DesktopClock.msi"
+
+      - name: Create GitHub release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "publish/*.exe,publish/*.msi"
+          allowUpdates: true
+          artifactErrorsFailBuild: true
+          prerelease: contains(github.ref, 'beta')

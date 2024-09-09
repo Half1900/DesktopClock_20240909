@@ -10,74 +10,57 @@ namespace DesktopClock.Properties;
 public sealed class Settings : INotifyPropertyChanged, IDisposable
 {
     private readonly FileSystemWatcher _watcher;
+    private DateTime _fileDate = DateTime.UtcNow;
 
-    private static readonly Lazy<Settings> _default = new(LoadAndAttemptSave);
+    private static readonly Lazy<Settings> _default = new(() => Load() ?? new Settings());
 
     private static readonly JsonSerializerSettings _jsonSerializerSettings = new()
     {
-        Formatting = Formatting.Indented,
-        Error = (_, e) => e.ErrorContext.Handled = true,
+        Formatting = Formatting.Indented
     };
 
     private Settings()
     {
         // Settings file path from same directory as the executable.
-        var settingsFileName = Path.GetFileNameWithoutExtension(App.MainFileInfo.FullName) + ".settings";
-        FilePath = Path.Combine(App.MainFileInfo.DirectoryName, settingsFileName);
+        var exeInfo = new FileInfo(System.Reflection.Assembly.GetEntryAssembly().Location);
+        var settingsFileName = Path.GetFileNameWithoutExtension(exeInfo.FullName) + ".settings";
+        FilePath = Path.Combine(exeInfo.DirectoryName, settingsFileName);
 
         // Watch for changes.
-        _watcher = new(App.MainFileInfo.DirectoryName, settingsFileName)
+        _watcher = new(exeInfo.DirectoryName, settingsFileName)
         {
-            EnableRaisingEvents = true,
+            EnableRaisingEvents = true
         };
         _watcher.Changed += FileChanged;
 
-        // Random default theme before getting overwritten.
-        Theme = Theme.GetRandomDefaultTheme();
+        // Random default theme.
+        var random = new Random();
+        Theme = App.Themes[random.Next(0, App.Themes.Count)];
     }
 
-#pragma warning disable CS0067 // The event 'Settings.PropertyChanged' is never used
+    #pragma warning disable CS0067 // The event 'Settings.PropertyChanged' is never used
     public event PropertyChangedEventHandler PropertyChanged;
-#pragma warning restore CS0067 // The event 'Settings.PropertyChanged' is never used
+    #pragma warning restore CS0067 // The event 'Settings.PropertyChanged' is never used
 
     public static Settings Default => _default.Value;
 
-    /// <summary>
-    /// The full path to the settings file.
-    /// </summary>
     public static string FilePath { get; private set; }
-
-    /// <summary>
-    /// Can the settings file be saved to?
-    /// </summary>
-    public static bool CanBeSaved { get; private set; }
-
-    /// <summary>
-    /// Does the settings file exist on the disk?
-    /// </summary>
-    public static bool Exists => File.Exists(FilePath);
 
     #region "Properties"
 
+    public DateTimeOffset CountdownTo { get; set; } = DateTimeOffset.MinValue;
     public string Format { get; set; } = "yyyy-MM-dd dddd HH:mm:ss";
-    public string CountdownFormat { get; set; } = "";
-    public DateTime? CountdownTo { get; set; } = default(DateTime);
     public string TimeZone { get; set; } = string.Empty;
     public string FontFamily { get; set; } = "Consolas";
     public Color TextColor { get; set; }
     public Color OuterColor { get; set; }
     public bool BackgroundEnabled { get; set; } = true;
-    public double BackgroundOpacity { get; set; } = 0.90;
-    public double BackgroundCornerRadius { get; set; } = 1;
-    public double OutlineThickness { get; set; } = 0.2;
+    public double BackgroundOpacity { get; set; } = 1;
+    public double OutlineThickness { get; set; } = 0;
     public bool Topmost { get; set; } = true;
     public bool ShowInTaskbar { get; set; } = true;
-    public int Height { get; set; } = 48;
+    public int Height { get; set; } = 26;
     public bool RunOnStartup { get; set; } = false;
-    public bool ShowOrHide { get; set; } = false;
-    public bool DragToMove { get; set; } = true;
-    public bool RightAligned { get; set; } = false;
-    public TeachingTips TipsShown { get; set; }
     public WindowPlacement Placement { get; set; }
 
     [JsonIgnore]
@@ -94,28 +77,31 @@ public sealed class Settings : INotifyPropertyChanged, IDisposable
     #endregion "Properties"
 
     /// <summary>
-    /// Saves to the default path in JSON format.
+    /// Determines if the settings file has been modified externally since the last time it was used.
     /// </summary>
-    public bool Save()
+    public bool CheckIfModifiedExternally() =>
+        File.GetLastWriteTimeUtc(FilePath) > _fileDate;
+
+    /// <summary>
+    /// Saves to the default path.
+    /// </summary>
+    public void Save()
     {
-        var json = JsonConvert.SerializeObject(this, _jsonSerializerSettings);
+        using (var fileStream = new FileStream(FilePath, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite))
+        using (var streamWriter = new StreamWriter(fileStream))
+        using (var jsonWriter = new JsonTextWriter(streamWriter))
+            JsonSerializer.Create(_jsonSerializerSettings).Serialize(jsonWriter, this);
 
-        // Attempt to save multiple times.
-        for (var i = 0; i < 4; i++)
-        {
-            try
-            {
-                File.WriteAllText(FilePath, json);
-                return true;
-            }
-            catch
-            {
-                // Wait before next attempt to read.
-                System.Threading.Thread.Sleep(250);
-            }
-        }
+        _fileDate = DateTime.UtcNow;
+    }
 
-        return false;
+    /// <summary>
+    /// Saves to the default path unless a save has already happened from an external source.
+    /// </summary>
+    public void SaveIfNotModifiedExternally()
+    {
+        if (!CheckIfModifiedExternally())
+            Save();
     }
 
     /// <summary>
@@ -131,9 +117,9 @@ public sealed class Settings : INotifyPropertyChanged, IDisposable
     }
 
     /// <summary>
-    /// Loads from the default path in JSON format.
+    /// Returns loaded settings from the default path or null if it fails.
     /// </summary>
-    private static Settings LoadFromFile()
+    private static Settings Load()
     {
         try
         {
@@ -143,25 +129,10 @@ public sealed class Settings : INotifyPropertyChanged, IDisposable
         }
         catch
         {
-            return new();
+            return null;
         }
     }
 
-    /// <summary>
-    /// Loads from the default path in JSON format then attempts to save in order to check if it can be done.
-    /// </summary>
-    private static Settings LoadAndAttemptSave()
-    {
-        var settings = LoadFromFile();
-
-        CanBeSaved = settings.Save();
-
-        return settings;
-    }
-
-    /// <summary>
-    /// Occurs after the watcher detects a change in the settings file.
-    /// </summary>
     private void FileChanged(object sender, FileSystemEventArgs e)
     {
         try
@@ -170,6 +141,7 @@ public sealed class Settings : INotifyPropertyChanged, IDisposable
         }
         catch
         {
+
         }
     }
 
